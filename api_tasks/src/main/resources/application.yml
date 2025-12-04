@@ -1,0 +1,120 @@
+spring:
+  application:
+    name: tasks-service
+  
+  datasource:
+    url: jdbc:postgresql://${DB_TASKS_HOST:localhost}:${DB_TASKS_PORT:5434}/${DB_TASKS_NAME:tasks_db}
+    username: ${DB_TASKS_USERNAME:postgres}
+    password: ${DB_TASKS_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+  
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9094,localhost:9096}
+    consumer:
+      group-id: tasks-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        max.poll.records: 10
+        max.poll.interval.ms: 300000
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        acks: all
+        retries: 3
+        max.in.flight.requests.per.connection: 1
+        enable.idempotence: true
+    listener:
+      ack-mode: manual_immediate
+      concurrency: 1
+
+server:
+  port: 8082
+
+jwt:
+  secret: ${JWT_SECRET:your_super_secret_jwt_key_that_is_at_least_256_bits_long_for_HS256_algorithm}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+      environment: ${ENVIRONMENT:development}
+
+# Resilience4j Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      userService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 5s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+        recordExceptions:
+          - org.springframework.web.client.RestClientException
+  retry:
+    instances:
+      userService:
+        maxAttempts: 3
+        waitDuration: 1000
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+
+# Cache configuration
+cache:
+  user:
+    ttl-seconds: 300  # 5 minutes
+
+# External services
+services:
+  users:
+    url: http://${USERS_SERVICE_HOST:localhost}:${USERS_SERVICE_PORT:8081}
+    timeout: 5000  # 5 seconds timeout
+
+# Application properties with validation
+app:
+  database:
+    url: ${spring.datasource.url}
+    username: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+  services:
+    users:
+      url: ${services.users.url}
+      timeout: ${services.users.timeout}
+  cache:
+    user:
+      ttl-seconds: ${cache.user.ttl-seconds}
+
+logging:
+  level:
+    com.simdev: DEBUG
+    org.springframework.kafka: INFO

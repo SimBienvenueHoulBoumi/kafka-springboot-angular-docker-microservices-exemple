@@ -1,0 +1,299 @@
+services:
+  # PostgreSQL pour le service Users
+  postgres-users:
+    image: postgres:15
+    container_name: kafka-postgres-users
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USERS_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_USERS_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_USERS_DB}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-users-data:/var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USERS_USER} -d ${POSTGRES_USERS_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - microservices-network
+
+  # PostgreSQL pour le service Tasks
+  postgres-tasks:
+    image: postgres:15
+    container_name: kafka-postgres-tasks
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_TASKS_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_TASKS_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_TASKS_DB}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-tasks-data:/var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_TASKS_USER} -d ${POSTGRES_TASKS_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - microservices-network
+
+  # Kafka Broker 1
+  kafka-1:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-kafka-1
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_INTERNAL://0.0.0.0:19092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka-1:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+    volumes:
+      - kafka-1-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - microservices-network
+
+  # Kafka Broker 2
+  kafka-2:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-kafka-2
+    restart: unless-stopped
+    ports:
+      - "9094:9092"
+      - "9095:9093"
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 2
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_INTERNAL://0.0.0.0:19092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9094,PLAINTEXT_INTERNAL://kafka-2:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+    volumes:
+      - kafka-2-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - microservices-network
+
+  # Kafka Broker 3
+  kafka-3:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-kafka-3
+    restart: unless-stopped
+    ports:
+      - "9096:9092"
+      - "9097:9093"
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 3
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_INTERNAL://0.0.0.0:19092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9096,PLAINTEXT_INTERNAL://kafka-3:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+    volumes:
+      - kafka-3-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - microservices-network
+
+  # Users Service
+  api-users:
+    build:
+      context: ./api_users
+      dockerfile: Dockerfile
+    container_name: kafka-api-users
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      DB_USERS_HOST: ${DB_USERS_HOST}
+      DB_USERS_PORT: ${DB_USERS_PORT}
+      DB_USERS_NAME: ${DB_USERS_NAME}
+      DB_USERS_USERNAME: ${DB_USERS_USERNAME}
+      DB_USERS_PASSWORD: ${DB_USERS_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME}
+      ADMIN_LAST_NAME: ${ADMIN_LAST_NAME}
+    depends_on:
+      postgres-users:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - microservices-network
+
+  # Tasks Service
+  api-tasks:
+    build:
+      context: ./api_tasks
+      dockerfile: Dockerfile
+    container_name: kafka-api-tasks
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      DB_TASKS_HOST: ${DB_TASKS_HOST}
+      DB_TASKS_PORT: ${DB_TASKS_PORT}
+      DB_TASKS_NAME: ${DB_TASKS_NAME}
+      DB_TASKS_USERNAME: ${DB_TASKS_USERNAME}
+      DB_TASKS_PASSWORD: ${DB_TASKS_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      JWT_SECRET: ${JWT_SECRET}
+      USERS_SERVICE_HOST: api-users
+      USERS_SERVICE_PORT: 8081
+    depends_on:
+      postgres-tasks:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - microservices-network
+
+  # API Gateway Service
+  api-gateway:
+    build:
+      context: ./api_gateways
+      dockerfile: Dockerfile
+    container_name: kafka-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      USERS_SERVICE_HOST: api-users
+      USERS_SERVICE_PORT: 8081
+      TASKS_SERVICE_HOST: api-tasks
+      TASKS_SERVICE_PORT: 8082
+    depends_on:
+      api-users:
+        condition: service_healthy
+      api-tasks:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - microservices-network
+
+  # Angular Frontend (Nginx)
+  # Note: Nginx écoute sur le port 80 dans le conteneur (standard HTTP)
+  # Le mapping "4200:80" expose le frontend sur le port 4200 de l'hôte
+  angular-frontend:
+    build:
+      context: ./taskmanager-angular
+      dockerfile: Dockerfile
+    container_name: kafka-angular-frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"  # Port hôte:Port conteneur (nginx écoute sur 80 dans le conteneur)
+    environment:
+      # URL de l'API Gateway depuis le navigateur (accessible depuis localhost)
+      # Le frontend Angular s'exécute dans le navigateur, il doit utiliser localhost
+      API_URL: http://localhost:8080
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - microservices-network
+
+volumes:
+  postgres-users-data:
+    driver: local
+  postgres-tasks-data:
+    driver: local
+  kafka-1-data:
+    driver: local
+  kafka-2-data:
+    driver: local
+  kafka-3-data:
+    driver: local
+
+networks:
+  microservices-network:
+    driver: bridge
+

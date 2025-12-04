@@ -1,0 +1,33 @@
+# Fichiers de configuration sensibles
+# ⚠️ IMPORTANT: Le fichier .env contient tous les secrets et ne doit JAMAIS être commité
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# IDs de processus
+*.pid
+
+# Fichiers de build
+build/
+target/
+.gradle/
+*.jar
+!gradle-wrapper.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+

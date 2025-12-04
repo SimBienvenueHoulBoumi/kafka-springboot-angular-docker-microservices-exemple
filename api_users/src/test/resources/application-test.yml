@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      auto-offset-reset: earliest
+
+jwt:
+  secret: test_secret_key_for_testing_purposes_only_min_32_chars
+  expiration: 3600000
+
+admin:
+  email: test@example.com
+  password: test123
+  first-name: Test
+  last-name: Admin
+
+logging:
+  level:
+    root: WARN
+    com.simdev: INFO
+

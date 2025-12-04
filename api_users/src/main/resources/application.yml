@@ -1,0 +1,83 @@
+spring:
+  application:
+    name: users-service
+  
+  datasource:
+    url: jdbc:postgresql://${DB_USERS_HOST:localhost}:${DB_USERS_PORT:5433}/${DB_USERS_NAME:users_db}
+    username: ${DB_USERS_USERNAME:postgres}
+    password: ${DB_USERS_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+  
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9094,localhost:9096}
+    consumer:
+      group-id: users-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+server:
+  port: 8081
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+      environment: ${ENVIRONMENT:development}
+
+jwt:
+  secret: ${JWT_SECRET:your_super_secret_jwt_key_that_is_at_least_256_bits_long_for_HS256_algorithm}
+  expiration: 86400000  # 24 hours in milliseconds
+
+admin:
+  email: ${ADMIN_EMAIL:admin@example.com}
+  password: ${ADMIN_PASSWORD:admin123}
+  first-name: ${ADMIN_FIRST_NAME:Admin}
+  last-name: ${ADMIN_LAST_NAME:User}
+
+# Application properties with validation
+app:
+  jwt:
+    secret: ${jwt.secret}
+    expiration: ${jwt.expiration}
+  admin:
+    email: ${admin.email}
+    password: ${admin.password}
+    first-name: ${admin.first-name}
+    last-name: ${admin.last-name}
+  database:
+    url: ${spring.datasource.url}
+    username: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+
+logging:
+  level:
+    com.simdev: DEBUG
+    org.springframework.kafka: INFO
+    org.springframework.security: DEBUG
