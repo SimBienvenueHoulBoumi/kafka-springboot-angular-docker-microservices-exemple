@@ -624,8 +624,3 @@ Custom metrics disponibles :
 - Tests E2E complets
 - Tests de charge (JMeter/k6)
 
----
-
-*Dernière mise à jour : 2025-12-04*  
-*Robustesse : 9.0/10 ⭐⭐⭐⭐⭐*  
-*Performance Angular : 10/10 ⭐⭐⭐⭐⭐*
